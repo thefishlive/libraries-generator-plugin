@@ -68,12 +68,10 @@ public class LibsGenerationMojo extends AbstractMojo {
         JsonObject json = new JsonObject();
         JsonArray libs = new JsonArray();
 
-        getLog().info(this.urls.toString());
-
         for (Dependency dep : getDependencies()) {
 
             if (!shouldInclude(dep)) {
-                getLog().info("Skipped " + buildArtifactId(dep) + ":" + dep.getScope());
+                getLog().debug("Skipped " + buildArtifactId(dep) + ":" + dep.getScope());
                 continue;
             }
 
@@ -147,7 +145,6 @@ public class LibsGenerationMojo extends AbstractMojo {
 
     private MavenProject buildProject(Artifact artifact) throws MojoExecutionException {
         try {
-
             return projectBuilder.buildFromRepository(artifact, this.remote, this.local);
         } catch (ProjectBuildingException e) {
             throw new MojoExecutionException("Error building project for " + artifact.toString(), e);
@@ -166,9 +163,7 @@ public class LibsGenerationMojo extends AbstractMojo {
     private String getUrl(Dependency dep) {
         String baseUrl = "http://repo1.maven.org/maven2/";
 
-        getLog().info(dep.getGroupId());
         if (urls.containsKey(dep.getGroupId())) {
-            getLog().info(urls.get(dep.getGroupId()));
             baseUrl = urls.get(dep.getGroupId());
         }
 
