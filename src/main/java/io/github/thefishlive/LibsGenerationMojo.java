@@ -23,10 +23,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-@SuppressWarnings("MismatchedReadAndWriteOfArray")
+@SuppressWarnings({"MismatchedReadAndWriteOfArray", "MismatchedQueryAndUpdateOfCollection"})
 @Mojo( name = "generate-libs", defaultPhase = LifecyclePhase.GENERATE_SOURCES )
 public class LibsGenerationMojo extends AbstractMojo {
 
@@ -45,19 +44,22 @@ public class LibsGenerationMojo extends AbstractMojo {
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir" )
     private File outputDirectory;
 
+    @Parameter( defaultValue = "${project.build.finalName}.${project.packaging}.json", property ="outputName")
+    private String outputName;
+
     @Parameter( defaultValue = ":", property = "artifactSeparator")
     private char separator;
-
-    @Parameter( property = "groupUrls")
-    private Map<String, String> urls;
 
     @Parameter( defaultValue = "true", property = "prettyJson")
     private boolean pretty;
 
-    @Parameter( property = "excludes")
+    @Parameter( property = "groupUrls" )
+    private Map<String, String> urls;
+
+    @Parameter( property = "excludes" )
     private List<String> excludes;
 
-    @Parameter( property = "scopes")
+    @Parameter( property = "scopes" )
     private List<String> scopes;
 
     public void execute() throws MojoExecutionException {
@@ -71,7 +73,7 @@ public class LibsGenerationMojo extends AbstractMojo {
         for (Dependency dep : getDependencies()) {
 
             if (!shouldInclude(dep)) {
-                getLog().debug("Skipped " + buildArtifactId(dep) + ":" + dep.getScope());
+                getLog().debug("Skipped " + buildArtifactId(dep) + separator + dep.getScope());
                 continue;
             }
 
@@ -80,11 +82,11 @@ public class LibsGenerationMojo extends AbstractMojo {
             depJson.add("url", new JsonPrimitive(getUrl(dep)));
             libs.add(depJson);
 
-            getLog().info("Added " + buildArtifactId(dep) + ":" + dep.getScope() + " to libraries file");
+            getLog().info("Added " + buildArtifactId(dep) + separator + dep.getScope() + " to libraries file");
         }
 
         json.add("libs", libs);
-        File libsFile = new File(outputDirectory, project.getBuild().getFinalName() + ".libs");
+        File libsFile = new File(outputDirectory, outputName);
 
         if (libsFile.exists() && !libsFile.delete()) {
             throw new MojoExecutionException("Could not delete old libraries file");
@@ -152,8 +154,7 @@ public class LibsGenerationMojo extends AbstractMojo {
     }
 
     private boolean shouldInclude(Dependency dep) {
-        String artifactid = buildArtifactId(dep);
-        return !excludes.contains(artifactid) && scopes.contains(dep.getScope());
+        return !excludes.contains(buildArtifactId(dep)) && scopes.contains(dep.getScope());
     }
 
     private String buildArtifactId(Dependency dep) {
