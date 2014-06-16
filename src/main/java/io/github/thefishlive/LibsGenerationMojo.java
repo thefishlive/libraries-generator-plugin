@@ -4,12 +4,16 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import io.github.thefishlive.filter.DependencyFilter;
+import io.github.thefishlive.filter.PluginFilter;
+import io.github.thefishlive.filter.ScopeFilter;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -29,6 +33,9 @@ import java.util.Set;
 @Mojo( name = "generate-libs", defaultPhase = LifecyclePhase.GENERATE_SOURCES )
 public class LibsGenerationMojo extends AbstractMojo {
 
+    // Allow public access to the logger
+    private static Log logger;
+
     @Component
     private MavenProjectBuilder projectBuilder;
 
@@ -47,33 +54,38 @@ public class LibsGenerationMojo extends AbstractMojo {
     @Parameter( defaultValue = "${project.build.finalName}.${project.packaging}.json", property ="outputName")
     private String outputName;
 
-    @Parameter( defaultValue = ":", property = "artifactSeparator")
-    private char separator;
-
     @Parameter( defaultValue = "true", property = "prettyJson")
     private boolean pretty;
 
     @Parameter( property = "groupUrls" )
     private Map<String, String> urls;
 
-    @Parameter( property = "excludes" )
-    private List<String> excludes;
-
-    @Parameter( property = "scopes" )
-    private List<String> scopes;
+    @Parameter( property = "filter" )
+    private PluginFilter filter;
 
     public void execute() throws MojoExecutionException {
         if (project == null) {
             throw new MojoExecutionException("Project is null");
         }
 
+        logger = getLog();
+
         JsonObject json = new JsonObject();
         JsonArray libs = new JsonArray();
 
-        for (Dependency dep : getDependencies()) {
+        DependencyTreeWalker walker = new DependencyTreeWalker(this.projectBuilder, this.remote, this.local);
+        
+        List<Dependency> dependencies = walker.walkTree(this.project);
+        int count = dependencies.size();
+        filter.getDependencyFilter().filter(dependencies);
 
-            if (!shouldInclude(dep)) {
-                getLog().debug("Skipped " + buildArtifactId(dep) + separator + dep.getScope());
+        getLog().debug("Skipped " + (count - dependencies.size()) + " artifacts");
+
+        count = 0;
+
+        for (Dependency dep : dependencies) {
+            if (!filter.getScopeFilter().include(dep)) {
+                getLog().debug("Excluded " + buildArtifactId(dep));
                 continue;
             }
 
@@ -82,11 +94,16 @@ public class LibsGenerationMojo extends AbstractMojo {
             depJson.add("url", new JsonPrimitive(getUrl(dep)));
             libs.add(depJson);
 
-            getLog().info("Added " + buildArtifactId(dep) + separator + dep.getScope() + " to libraries file");
+            getLog().info("Included " + buildArtifactId(dep) + " to libraries file");
+            count++;
         }
+
+        getLog().info("Included " + count + " dependencies in the libraries file");
 
         json.add("libs", libs);
         File libsFile = new File(outputDirectory, outputName);
+
+        getLog().debug("Libraries File: " + libsFile.toString());
 
         if (libsFile.exists() && !libsFile.delete()) {
             throw new MojoExecutionException("Could not delete old libraries file");
@@ -108,57 +125,15 @@ public class LibsGenerationMojo extends AbstractMojo {
             GsonBuilder builder = new GsonBuilder();
 
             if (pretty) {
+                getLog().debug("Setting gson to pretty print");
                 builder.setPrettyPrinting();
             }
 
             builder.create().toJson(json, writer);
+            getLog().debug("Written json correctly");
         } catch (IOException ex) {
             throw new MojoExecutionException("Could not write libraries file", ex);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private List<Dependency> getDependencies() throws MojoExecutionException {
-        List<Dependency> deps = project.getDependencies();
-
-        for (Artifact artifact : (Set<Artifact>) project.getDependencyArtifacts()) {
-            MavenProject dependency = buildProject(artifact);
-
-            if (dependency.getDependencies() != null) {
-                for (Dependency dep : (List<Dependency>) dependency.getDependencies()) {
-                    if (!contains(deps, dep)) {
-                        deps.add(dep);
-                    }
-                }
-            }
-        }
-
-        return deps;
-    }
-
-    private boolean contains(List<Dependency> deps, Dependency dep) {
-        for (Dependency current : deps) {
-            if (current.getGroupId().equals(dep.getGroupId()) && current.getArtifactId().equals(dep.getArtifactId())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private MavenProject buildProject(Artifact artifact) throws MojoExecutionException {
-        try {
-            return projectBuilder.buildFromRepository(artifact, this.remote, this.local);
-        } catch (ProjectBuildingException e) {
-            throw new MojoExecutionException("Error building project for " + artifact.toString(), e);
-        }
-    }
-
-    private boolean shouldInclude(Dependency dep) {
-        return !excludes.contains(buildArtifactId(dep)) && scopes.contains(dep.getScope());
-    }
-
-    private String buildArtifactId(Dependency dep) {
-        return dep.getGroupId() + separator + dep.getArtifactId() + separator + dep.getVersion();
     }
 
     private String getUrl(Dependency dep) {
@@ -175,4 +150,13 @@ public class LibsGenerationMojo extends AbstractMojo {
 
         return baseUrl;
     }
+
+    public static String buildArtifactId(Dependency dep) {
+        return dep.getGroupId() + ":" + dep.getArtifactId() + ":" + dep.getVersion();
+    }
+
+    public static Log getLogger() {
+        return logger;
+    }
+
 }
