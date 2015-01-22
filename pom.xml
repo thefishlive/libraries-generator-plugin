@@ -2,7 +2,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.thefishlive</groupId>
+    <groupId>uk.co.thefishlive</groupId>
     <artifactId>libraries-generator-plugin</artifactId>
     <version>1.2.0-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
@@ -12,6 +12,18 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+	
+	<scm>
+	    <url>https://github.com/thefishlive/libraries-generator-plugin</url>
+        <developerConnection>https://github.com/thefishlive/libraries-generator-plugin.git</developerConnection>
+	</scm>
+
+	<distributionManagement>
+		<repository>
+			<id>thefishlive-maven</id>
+			<url>ftp://thefishlive.co.uk</url>
+		</repository>
+	</distributionManagement>
 
     <dependencies>
         <dependency>
@@ -19,11 +31,13 @@
             <artifactId>maven-plugin-api</artifactId>
             <version>2.0</version>
         </dependency>
+		
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
             <version>3.2</version>
         </dependency>
+		
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-project</artifactId>
@@ -33,12 +47,13 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.2.4</version>
+            <version>2.3</version>
         </dependency>
+		
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>17.0</version>
+            <version>18.0</version>
         </dependency>
 
         <dependency>
@@ -50,6 +65,15 @@
     </dependencies>
 
     <build>
+		<extensions>
+			<!-- Enabling the use of FTP -->
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ftp</artifactId>
+				<version>1.0-beta-6</version>
+			</extension>
+		</extensions>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -60,6 +84,7 @@
                     <target>1.7</target>
                 </configuration>
             </plugin>
+			
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
@@ -81,7 +106,20 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>maven.org.apache.maven.plugins</groupId>
+                <artifactId>maven-relase-plugin</artifactId>
+                <version>2.4.1</version>
+                <executions>
+                    <execution>
+                        <id>release</id>
+                        <goals>
+                            <goal>perform</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
 </project>
