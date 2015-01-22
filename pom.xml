@@ -109,9 +109,8 @@
             </plugin>
 
             <plugin>
-                <groupId>maven.org.apache.maven.plugins</groupId>
-                <artifactId>maven-relase-plugin</artifactId>
-                <version>2.4.1</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
                 <executions>
                     <execution>
                         <id>release</id>
