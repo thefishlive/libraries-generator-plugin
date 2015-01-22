@@ -15,7 +15,7 @@
 	
 	<scm>
 	    <url>https://github.com/thefishlive/libraries-generator-plugin</url>
-        <developerConnection>https://github.com/thefishlive/libraries-generator-plugin.git</developerConnection>
+        <developerConnection>scm:git:https://github.com/thefishlive/libraries-generator-plugin.git</developerConnection>
 	</scm>
 
 	<distributionManagement>
