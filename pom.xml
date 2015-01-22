@@ -3,7 +3,7 @@
 
     <groupId>uk.co.thefishlive</groupId>
     <artifactId>libraries-generator-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Libraries Generator Plugin</name>
@@ -16,7 +16,7 @@
 	<scm>
 	    <url>https://github.com/thefishlive/libraries-generator-plugin</url>
         <developerConnection>scm:git:https://github.com/thefishlive/libraries-generator-plugin.git</developerConnection>
-	  <tag>1.2.0</tag>
+	  <tag>HEAD</tag>
   </scm>
 
 	<distributionManagement>
