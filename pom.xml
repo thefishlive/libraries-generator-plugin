@@ -119,6 +119,10 @@
                         </goals>
                     </execution>
                 </executions>
+
+                <configuration>
+                    <tagNameFormat>${project.version}</tagNameFormat>
+                </configuration>
             </plugin>
         </plugins>
     </build>

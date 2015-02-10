@@ -20,6 +20,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
+import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.project.ProjectBuildingException;
 
 import java.io.File;
@@ -39,14 +40,17 @@ public class LibsGenerationMojo extends AbstractMojo {
     @Component
     private MavenProjectBuilder projectBuilder;
 
+    @Component
+    private MavenProject project;
+
+    @Component
+    private MavenProjectHelper projectHelper;
+
     @Parameter( defaultValue = "${localRepository}", readonly = true, required = true )
     private ArtifactRepository local;
 
     @Parameter( defaultValue = "${project.remoteArtifactRepositories}", readonly = true, required = true )
     private List<ArtifactRepository> remote;
-
-    @Parameter( defaultValue = "${project}", readonly = true, required = true)
-    private MavenProject project;
 
     @Parameter( defaultValue = "${project.build.directory}", property = "outputDir" )
     private File outputDirectory;
@@ -62,6 +66,7 @@ public class LibsGenerationMojo extends AbstractMojo {
 
     @Parameter( property = "filter" )
     private PluginFilter filter;
+
 
     public void execute() throws MojoExecutionException {
         if (project == null) {
@@ -134,6 +139,8 @@ public class LibsGenerationMojo extends AbstractMojo {
         } catch (IOException ex) {
             throw new MojoExecutionException("Could not write libraries file", ex);
         }
+
+        projectHelper.attachArtifact(project, "json", "libraries", libsFile);
     }
 
     private String getUrl(Dependency dep) {
